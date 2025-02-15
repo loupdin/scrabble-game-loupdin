@@ -21,42 +21,47 @@ export default function ScrabbleGame() {
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>Loupdin Scrabble Game</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '4px', justifyContent: 'center' }}>
-        {board.map((row, rowIndex) => (
-          <div key={rowIndex} style={{ display: 'flex' }}>
-            {row.map((cell, colIndex) => (
-              <div
-                key={colIndex}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  border: '1px solid #ccc',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: cell ? '#ddd' : '#fff',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-                onClick={() => handleBoardClick(rowIndex, colIndex)}
-              >
-                {cell}
-              </div>
-            ))}
-          </div>
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', backgroundColor: '#f8f8f8', minHeight: '100vh' }}>
+      <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px' }}>Loupdin Scrabble Game</h1>
+      
+      {/* Game Board */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '2px', backgroundColor: '#c2a87e', padding: '10px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
+        {board.map((row, rowIndex) => 
+          row.map((cell, colIndex) => (
+            <div
+              key={`${rowIndex}-${colIndex}`}
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '1px solid #333',
+                backgroundColor: cell ? '#ddd' : '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+              onClick={() => handleBoardClick(rowIndex, colIndex)}
+            >
+              {cell}
+            </div>
+          ))
+        )}
       </div>
-      <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+
+      {/* Letter Tiles */}
+      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         {tiles.map((tile, index) => (
           <button key={index} onClick={() => handleTileSelect(tile)} style={{
             padding: '10px',
-            fontSize: '16px',
+            fontSize: '18px',
             fontWeight: 'bold',
-            border: '1px solid #ccc',
-            cursor: 'pointer'
+            border: '2px solid #444',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            backgroundColor: selectedTile === tile ? '#f5c518' : '#eee',
+            transition: '0.2s ease-in-out'
           }}>
             {tile}
           </button>
