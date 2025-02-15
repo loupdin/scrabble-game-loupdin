@@ -15,27 +15,9 @@ const generateTiles = (num = 7) => Array.from({ length: num }, () => getRandomLe
 export default function ScrabbleGame() {
   const [tiles, setTiles] = useState(generateTiles(7));
   const [board, setBoard] = useState(Array.from({ length: 15 }, () => Array(15).fill(null)));
-  const [selectedTile, setSelectedTile] = useState(null);
   const [placedTiles, setPlacedTiles] = useState([]);
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
-
-  const handleTileSelect = (tile, index) => {
-    setSelectedTile({ tile, index });
-  };
-
-  const handleBoardClick = (row, col) => {
-    if (selectedTile) {
-      setBoard(prevBoard => {
-        const newBoard = prevBoard.map(rowArr => [...rowArr]);
-        newBoard[row][col] = selectedTile.tile;
-        return newBoard;
-      });
-      setPlacedTiles(prev => [...prev, { row, col, tile: selectedTile.tile }]);
-      setTiles(prevTiles => prevTiles.filter((_, i) => i !== selectedTile.index));
-      setSelectedTile(null);
-    }
-  };
 
   const commitMove = () => {
     if (placedTiles.length === 0) return;
@@ -43,6 +25,24 @@ export default function ScrabbleGame() {
     setPlayerScore(prevScore => prevScore + roundScore);
     setPlacedTiles([]);
     setTiles(prevTiles => [...prevTiles, ...generateTiles(placedTiles.length)]);
+  };
+
+  const handleDragStart = (event, tile, index) => {
+    event.dataTransfer.setData("text/plain", JSON.stringify({ tile, index }));
+  };
+
+  const handleDrop = (event, row, col) => {
+    event.preventDefault();
+    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+    
+    setBoard(prevBoard => {
+      const newBoard = prevBoard.map(rowArr => [...rowArr]);
+      newBoard[row][col] = { letter: data.tile, value: letterValues[data.tile] };
+      return newBoard;
+    });
+    
+    setPlacedTiles(prev => [...prev, { row, col, tile: data.tile }]);
+    setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
   };
 
   return (
@@ -67,25 +67,34 @@ export default function ScrabbleGame() {
                 justifyContent: 'center',
                 fontSize: '1.2rem',
                 fontWeight: 'bold',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                position: 'relative'
               }}
-              onClick={() => handleBoardClick(rowIndex, colIndex)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => handleDrop(event, rowIndex, colIndex)}
             >
-              {cell}
+              {cell && (
+                <>
+                  {cell.letter}
+                  <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
+                    {cell.value}
+                  </span>
+                </>
+              )}
             </div>
           ))
         )}
       </div>
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         {tiles.map((tile, index) => (
-          <button key={index} onClick={() => handleTileSelect(tile, index)} style={{
+          <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
             padding: '10px',
             fontSize: '18px',
             fontWeight: 'bold',
             border: '2px solid #444',
             borderRadius: '5px',
-            cursor: 'pointer',
-            backgroundColor: selectedTile?.index === index ? '#f5c518' : '#eee',
+            cursor: 'grab',
+            backgroundColor: '#eee',
             transition: '0.2s ease-in-out',
             position: 'relative'
           }}>
@@ -93,7 +102,7 @@ export default function ScrabbleGame() {
             <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
               {letterValues[tile]}
             </span>
-          </button>
+          </div>
         ))}
       </div>
       <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out' }}>Commit Move</button>
