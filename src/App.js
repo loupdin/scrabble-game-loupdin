@@ -1,8 +1,4 @@
 import { useState } from 'react';
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
 
 export default function ScrabbleGame() {
   const [tiles, setTiles] = useState(['A', 'E', 'I', 'O', 'U', 'T', 'N']);
@@ -25,32 +21,45 @@ export default function ScrabbleGame() {
   };
 
   return (
-    <div className="flex flex-col items-center p-4">
-      <h1 className="text-2xl font-bold mb-4">Loupdin Scrabble Game</h1>
-      <div className="grid grid-cols-15 gap-1 bg-wood p-2 rounded-lg shadow-lg">
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>Loupdin Scrabble Game</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '4px', justifyContent: 'center' }}>
         {board.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex">
+          <div key={rowIndex} style={{ display: 'flex' }}>
             {row.map((cell, colIndex) => (
-              <Card
+              <div
                 key={colIndex}
-                className="w-10 h-10 flex items-center justify-center border border-gray-300"
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '1px solid #ccc',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: cell ? '#ddd' : '#fff',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
                 onClick={() => handleBoardClick(rowIndex, colIndex)}
               >
-                {cell && (
-                  <motion.div whileHover={{ scale: 1.1 }}>
-                    {cell}
-                  </motion.div>
-                )}
-              </Card>
+                {cell}
+              </div>
             ))}
           </div>
         ))}
       </div>
-      <div className="mt-4 flex space-x-2">
+      <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
         {tiles.map((tile, index) => (
-          <Button key={index} onClick={() => handleTileSelect(tile)}>
+          <button key={index} onClick={() => handleTileSelect(tile)} style={{
+            padding: '10px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            border: '1px solid #ccc',
+            cursor: 'pointer'
+          }}>
             {tile}
-          </Button>
+          </button>
         ))}
       </div>
     </div>
