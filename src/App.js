@@ -5,6 +5,8 @@ const letterValues = {
   N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
 };
 
+const dictionary = new Set(["APPLE", "BANANA", "CHERRY", "DOG", "ELEPHANT", "FISH", "GRAPE", "HOUSE", "ICE", "JUMP", "KITE", "LION", "MANGO", "NOTE", "ORANGE", "PENCIL", "QUEEN", "RIVER", "SUN", "TIGER", "UMBRELLA", "VAN", "WATER", "XYLOPHONE", "YELLOW", "ZEBRA"]);
+
 const getRandomLetter = () => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   return letters[Math.floor(Math.random() * letters.length)];
@@ -21,9 +23,18 @@ export default function ScrabbleGame() {
 
   const commitMove = () => {
     if (placedTiles.length === 0) return;
+    
+    const formedWord = placedTiles.map(tile => tile.tile).join("");
+    if (!dictionary.has(formedWord)) {
+      alert(`'${formedWord}' is not a valid word!`);
+      return;
+    }
+
     const roundScore = placedTiles.reduce((total, tile) => total + letterValues[tile.tile], 0);
     setPlayerScore(prevScore => prevScore + roundScore);
     setPlacedTiles([]);
+    
+    // Ensure the player gets new tiles after committing a move
     setTiles(prevTiles => [...prevTiles, ...generateTiles(placedTiles.length)]);
   };
 
@@ -40,7 +51,7 @@ export default function ScrabbleGame() {
       newBoard[row][col] = { letter: data.tile, value: letterValues[data.tile] };
       return newBoard;
     });
-    
+
     setPlacedTiles(prev => [...prev, { row, col, tile: data.tile }]);
     setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
   };
@@ -85,26 +96,33 @@ export default function ScrabbleGame() {
           ))
         )}
       </div>
+      
+      {/* Letter Tiles */}
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        {tiles.map((tile, index) => (
-          <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
-            padding: '10px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            border: '2px solid #444',
-            borderRadius: '5px',
-            cursor: 'grab',
-            backgroundColor: '#eee',
-            transition: '0.2s ease-in-out',
-            position: 'relative'
-          }}>
-            {tile}
-            <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
-              {letterValues[tile]}
-            </span>
-          </div>
-        ))}
+        {tiles.length > 0 ? (
+          tiles.map((tile, index) => (
+            <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
+              padding: '10px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              border: '2px solid #444',
+              borderRadius: '5px',
+              cursor: 'grab',
+              backgroundColor: '#eee',
+              transition: '0.2s ease-in-out',
+              position: 'relative'
+            }}>
+              {tile}
+              <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
+                {letterValues[tile]}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p>No tiles left!</p>
+        )}
       </div>
+
       <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out' }}>Commit Move</button>
     </div>
   );
