@@ -69,27 +69,6 @@ export default function ScrabbleGame() {
     alert("Turn skipped!");
   };
 
-  const handleDragStart = (event, tile, index, fromBoard = false, row = null, col = null) => {
-    event.dataTransfer.setData("text/plain", JSON.stringify({ tile, index, fromBoard, row, col }));
-  };
-
-  const handleDrop = (event, row, col) => {
-    event.preventDefault();
-    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
-    
-    setBoard(prevBoard => {
-      const newBoard = prevBoard.map(rowArr => [...rowArr]);
-      if (data.fromBoard) {
-        newBoard[data.row][data.col] = null;
-        setTiles(prevTiles => [...prevTiles, data.tile]);
-      } else {
-        newBoard[row][col] = { letter: data.tile, value: letterValues[data.tile] };
-        setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
-      }
-      return newBoard;
-    });
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', backgroundColor: '#f8f8f8', minHeight: '100vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '600px', marginBottom: '20px' }}>
@@ -97,41 +76,26 @@ export default function ScrabbleGame() {
         <h2>Opponent Score: {opponentScore}</h2>
       </div>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px' }}>Loupdin Scrabble Game</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '2px', backgroundColor: '#c2a87e', padding: '10px', borderRadius: '8px' }}>
-        {board.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              style={{
-                width: '40px',
-                height: '40px',
-                border: '1px solid #333',
-                backgroundColor: cell ? '#ddd' : '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                position: 'relative'
-              }}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => handleDrop(event, rowIndex, colIndex)}
-            >
-              {cell && (
-                <div
-                  draggable
-                  onDragStart={(event) => handleDragStart(event, cell.letter, null, true, rowIndex, colIndex)}
-                >
-                  {cell.letter}
-                  <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
-                    {cell.value}
-                  </span>
-                </div>
-              )}
-            </div>
-          ))
-        )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 50px)', gap: '5px', marginBottom: '20px' }}>
+        {tiles.map((tile, index) => (
+          <div
+            key={index}
+            style={{
+              width: '50px',
+              height: '50px',
+              border: '2px solid #333',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              backgroundColor: '#fff',
+              cursor: 'pointer'
+            }}
+          >
+            {tile} <span style={{ fontSize: '0.8rem', marginLeft: '5px' }}>{letterValues[tile]}</span>
+          </div>
+        ))}
       </div>
       <button onClick={commitMove} style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
       <button onClick={skipTurn} style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
