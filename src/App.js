@@ -5,9 +5,6 @@ const letterValues = {
   N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
 };
 
-const API_KEY = "5e5e356d-0af0-4e01-9d2d-f526be53b058";
-const API_URL = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
-
 const getRandomLetter = () => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   return letters[Math.floor(Math.random() * letters.length)];
@@ -18,43 +15,8 @@ const generateTiles = (num = 7) => Array.from({ length: num }, () => getRandomLe
 export default function ScrabbleGame() {
   const [tiles, setTiles] = useState(generateTiles(7));
   const [board, setBoard] = useState(Array.from({ length: 15 }, () => Array(15).fill(null)));
-  const [placedTiles, setPlacedTiles] = useState([]);
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
-
-  const validateWord = async (word) => {
-    try {
-      const response = await fetch(`${API_URL}${word}?key=${API_KEY}`);
-      const data = await response.json();
-      return Array.isArray(data) && data.some(entry => entry.meta);
-    } catch (error) {
-      console.error("Error validating word:", error);
-      return false;
-    }
-  };
-
-  const commitMove = async () => {
-    if (placedTiles.length === 0) return;
-    
-    const formedWord = placedTiles.map(tile => tile.tile).join("");
-    const isValid = await validateWord(formedWord);
-    if (!isValid) {
-      alert(`'${formedWord}' is not a valid word!`);
-      setTiles(prevTiles => [...prevTiles, ...placedTiles.map(t => t.tile)]);
-      setPlacedTiles([]);
-      return;
-    }
-
-    const roundScore = placedTiles.reduce((total, tile) => total + letterValues[tile.tile], 0);
-    setPlayerScore(prevScore => prevScore + roundScore);
-    setPlacedTiles([]);
-    setTiles(generateTiles(7));
-  };
-
-  const skipTurn = () => {
-    alert("Turn skipped!");
-    setTiles(generateTiles(7));
-  };
 
   const handleDragStart = (event, tile, index) => {
     event.dataTransfer.setData("text/plain", JSON.stringify({ tile, index }));
@@ -70,18 +32,35 @@ export default function ScrabbleGame() {
       return newBoard;
     });
 
-    setPlacedTiles(prev => [...prev, { row, col, tile: data.tile }]);
     setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
+  };
+
+  const handleDragStartRemove = (event, row, col) => {
+    event.dataTransfer.setData("text/plain", JSON.stringify({ row, col }));
+  };
+
+  const handleDropRemove = (event) => {
+    event.preventDefault();
+    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+    setBoard(prevBoard => {
+      const newBoard = prevBoard.map(rowArr => [...rowArr]);
+      const removedTile = newBoard[data.row][data.col];
+      if (removedTile) {
+        setTiles(prevTiles => [...prevTiles, removedTile.letter]);
+      }
+      newBoard[data.row][data.col] = null;
+      return newBoard;
+    });
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', backgroundColor: '#f8f8f8', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '600px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '600px', marginBottom: '20px' }}>
         <h2>Player Score: {playerScore}</h2>
         <h2>Opponent Score: {opponentScore}</h2>
       </div>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px' }}>Loupdin Scrabble Game</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '2px', backgroundColor: '#c2a87e', padding: '10px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.2)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '2px', backgroundColor: '#c2a87e', padding: '10px', borderRadius: '8px' }}>
         {board.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
@@ -101,6 +80,8 @@ export default function ScrabbleGame() {
               }}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => handleDrop(event, rowIndex, colIndex)}
+              draggable={!!cell}
+              onDragStart={(event) => handleDragStartRemove(event, rowIndex, colIndex)}
             >
               {cell && (
                 <>
@@ -114,7 +95,7 @@ export default function ScrabbleGame() {
           ))
         )}
       </div>
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }} onDragOver={(event) => event.preventDefault()} onDrop={handleDropRemove}>
         {tiles.map((tile, index) => (
           <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
             padding: '10px',
@@ -123,19 +104,14 @@ export default function ScrabbleGame() {
             border: '2px solid #444',
             borderRadius: '5px',
             cursor: 'grab',
-            backgroundColor: '#eee',
-            transition: '0.2s ease-in-out',
-            position: 'relative'
+            backgroundColor: '#eee'
           }}>
-            {tile}
-            <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
-              {letterValues[tile]}
-            </span>
+            {tile} <span style={{ fontSize: '12px', color: '#555' }}>{letterValues[tile]}</span>
           </div>
         ))}
       </div>
-      <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Commit Move</button>
-      <button onClick={skipTurn} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#FF5733', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Skip Turn</button>
+      <button style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
+      <button style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
     </div>
   );
 }
