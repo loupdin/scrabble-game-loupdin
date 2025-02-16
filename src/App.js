@@ -76,26 +76,29 @@ export default function ScrabbleGame() {
         <h2>Opponent Score: {opponentScore}</h2>
       </div>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px' }}>Loupdin Scrabble Game</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 50px)', gap: '5px', marginBottom: '20px' }}>
-        {tiles.map((tile, index) => (
-          <div
-            key={index}
-            style={{
-              width: '50px',
-              height: '50px',
-              border: '2px solid #333',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              backgroundColor: '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            {tile} <span style={{ fontSize: '0.8rem', marginLeft: '5px' }}>{letterValues[tile]}</span>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '2px', backgroundColor: '#c2a87e', padding: '10px', borderRadius: '8px', marginBottom: '20px' }}>
+        {board.map((row, rowIndex) =>
+          row.map((cell, colIndex) => (
+            <div
+              key={`${rowIndex}-${colIndex}`}
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '1px solid #333',
+                backgroundColor: cell ? '#ddd' : '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                position: 'relative'
+              }}
+            >
+              {cell && cell.letter}
+            </div>
+          ))
+        )}
       </div>
       <button onClick={commitMove} style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
       <button onClick={skipTurn} style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
