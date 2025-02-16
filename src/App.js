@@ -12,19 +12,32 @@ const getRandomLetter = () => {
 
 const generateTiles = (num = 7) => Array.from({ length: num }, () => getRandomLetter());
 
+const checkWordValidity = async (word) => {
+  const apiKey = "your-api-key";
+  const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${apiKey}`);
+  const data = await response.json();
+  return Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && data[0].meta;
+};
+
 export default function ScrabbleGame() {
   const [tiles, setTiles] = useState(generateTiles(7));
   const [board, setBoard] = useState(Array.from({ length: 15 }, () => Array(15).fill(null)));
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
 
-  const commitMove = () => {
-    console.log("Move committed!");
-    alert("Move committed!");
+  const commitMove = async () => {
+    const placedLetters = [];
+    board.forEach(row => row.forEach(cell => { if (cell) placedLetters.push(cell.letter); }));
+    const word = placedLetters.join("");
+    const isValid = await checkWordValidity(word);
+    if (isValid) {
+      alert("Move committed!");
+    } else {
+      alert(`'${word}' is not a valid word!`);
+    }
   };
 
   const skipTurn = () => {
-    console.log("Turn skipped!");
     alert("Turn skipped!");
   };
 
