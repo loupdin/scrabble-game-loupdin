@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const letterValues = {
   A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3,
@@ -13,36 +13,64 @@ const getRandomLetter = () => {
 const generateTiles = (num = 7) => Array.from({ length: num }, () => getRandomLetter());
 
 const checkWordValidity = async (word) => {
-  const apiKey = "your-api-key";
-  const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${apiKey}`);
-  const data = await response.json();
-  return Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && data[0].meta;
+  const apiKey = "5e5e356d-0af0-4e01-9d2d-f526be53b058";
+  try {
+    const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${apiKey}`);
+    if (!response.ok) {
+      console.error("Error: Invalid API response");
+      return false;
+    }
+    
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object' || !data[0].meta) {
+      console.warn("Invalid word or unexpected API response:", data);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Dictionary API error:", error);
+    return false;
+  }
 };
 
 export default function ScrabbleGame() {
-  const [tiles, setTiles] = useState(generateTiles(7));
+  const [tiles, setTiles] = useState([]);
   const [board, setBoard] = useState(Array.from({ length: 15 }, () => Array(15).fill(null)));
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
+
+  useEffect(() => {
+    setTiles(generateTiles(7));
+  }, []);
 
   const commitMove = async () => {
     const placedLetters = [];
     board.forEach(row => row.forEach(cell => { if (cell) placedLetters.push(cell.letter); }));
     const word = placedLetters.join("");
+    
+    if (!word) {
+      alert("No letters placed on the board!");
+      return;
+    }
+    
     const isValid = await checkWordValidity(word);
     if (isValid) {
+      setPlayerScore(playerScore + word.split('').reduce((acc, letter) => acc + letterValues[letter], 0));
       alert("Move committed!");
+      setTiles(generateTiles(7));
     } else {
       alert(`'${word}' is not a valid word!`);
     }
   };
 
   const skipTurn = () => {
+    setTiles(generateTiles(7));
     alert("Turn skipped!");
   };
 
-  const handleDragStart = (event, tile, index) => {
-    event.dataTransfer.setData("text/plain", JSON.stringify({ tile, index }));
+  const handleDragStart = (event, tile, index, fromBoard = false, row = null, col = null) => {
+    event.dataTransfer.setData("text/plain", JSON.stringify({ tile, index, fromBoard, row, col }));
   };
 
   const handleDrop = (event, row, col) => {
@@ -51,11 +79,15 @@ export default function ScrabbleGame() {
     
     setBoard(prevBoard => {
       const newBoard = prevBoard.map(rowArr => [...rowArr]);
-      newBoard[row][col] = { letter: data.tile, value: letterValues[data.tile] };
+      if (data.fromBoard) {
+        newBoard[data.row][data.col] = null;
+        setTiles(prevTiles => [...prevTiles, data.tile]);
+      } else {
+        newBoard[row][col] = { letter: data.tile, value: letterValues[data.tile] };
+        setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
+      }
       return newBoard;
     });
-
-    setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
   };
 
   return (
@@ -87,31 +119,19 @@ export default function ScrabbleGame() {
               onDrop={(event) => handleDrop(event, rowIndex, colIndex)}
             >
               {cell && (
-                <>
+                <div
+                  draggable
+                  onDragStart={(event) => handleDragStart(event, cell.letter, null, true, rowIndex, colIndex)}
+                >
                   {cell.letter}
                   <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
                     {cell.value}
                   </span>
-                </>
+                </div>
               )}
             </div>
           ))
         )}
-      </div>
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        {tiles.map((tile, index) => (
-          <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
-            padding: '10px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            border: '2px solid #444',
-            borderRadius: '5px',
-            cursor: 'grab',
-            backgroundColor: '#eee'
-          }}>
-            {tile} <span style={{ fontSize: '12px', color: '#555' }}>{letterValues[tile]}</span>
-          </div>
-        ))}
       </div>
       <button onClick={commitMove} style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
       <button onClick={skipTurn} style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
