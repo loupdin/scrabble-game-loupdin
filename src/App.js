@@ -46,12 +46,12 @@ export default function ScrabbleGame() {
     const roundScore = placedTiles.reduce((total, tile) => total + letterValues[tile.tile], 0);
     setPlayerScore(prevScore => prevScore + roundScore);
     setPlacedTiles([]);
-    setTiles([...tiles, ...generateTiles(placedTiles.length)]);
+    setTiles(generateTiles(7));
   };
 
   const skipTurn = () => {
     alert("Turn skipped!");
-    setTiles([...tiles, ...generateTiles(tiles.length)]);
+    setTiles(generateTiles(7));
   };
 
   const handleDragStart = (event, tile, index) => {
@@ -111,24 +111,6 @@ export default function ScrabbleGame() {
             </div>
           ))
         )}
-      </div>
-
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        {tiles.map((tile, index) => (
-          <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
-            padding: '10px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            border: '2px solid #444',
-            borderRadius: '5px',
-            cursor: 'grab',
-            backgroundColor: '#eee',
-            transition: '0.2s ease-in-out',
-            position: 'relative'
-          }}>
-            {tile}
-          </div>
-        ))}
       </div>
 
       <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out', marginRight: '10px' }}>Commit Move</button>
