@@ -5,7 +5,6 @@ const letterValues = {
   N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
 };
 
-// Replace this with your actual Merriam-Webster API key
 const API_KEY = "5e5e356d-0af0-4e01-9d2d-f526be53b058";
 const API_URL = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
 
@@ -27,8 +26,6 @@ export default function ScrabbleGame() {
     try {
       const response = await fetch(`${API_URL}${word}?key=${API_KEY}`);
       const data = await response.json();
-      
-      // Merriam-Webster returns an array where valid words contain a "meta" object
       return Array.isArray(data) && data.some(entry => entry.meta);
     } catch (error) {
       console.error("Error validating word:", error);
@@ -40,7 +37,6 @@ export default function ScrabbleGame() {
     if (placedTiles.length === 0) return;
     
     const formedWord = placedTiles.map(tile => tile.tile).join("");
-
     const isValid = await validateWord(formedWord);
     if (!isValid) {
       alert(`'${formedWord}' is not a valid word!`);
@@ -50,8 +46,11 @@ export default function ScrabbleGame() {
     const roundScore = placedTiles.reduce((total, tile) => total + letterValues[tile.tile], 0);
     setPlayerScore(prevScore => prevScore + roundScore);
     setPlacedTiles([]);
-    
     setTiles(prevTiles => [...prevTiles, ...generateTiles(placedTiles.length)]);
+  };
+
+  const skipTurn = () => {
+    alert("Turn skipped!");
   };
 
   const handleDragStart = (event, tile, index) => {
@@ -113,33 +112,9 @@ export default function ScrabbleGame() {
         )}
       </div>
 
-      {/* Letter Tiles */}
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        {tiles.length > 0 ? (
-          tiles.map((tile, index) => (
-            <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
-              padding: '10px',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              border: '2px solid #444',
-              borderRadius: '5px',
-              cursor: 'grab',
-              backgroundColor: '#eee',
-              transition: '0.2s ease-in-out',
-              position: 'relative'
-            }}>
-              {tile}
-              <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
-                {letterValues[tile]}
-              </span>
-            </div>
-          ))
-        ) : (
-          <p>No tiles left!</p>
-        )}
-      </div>
-
-      <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out' }}>Commit Move</button>
+      <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out', marginRight: '10px' }}>Commit Move</button>
+      
+      <button onClick={skipTurn} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#FF5733', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out' }}>Skip Turn</button>
     </div>
   );
 }
