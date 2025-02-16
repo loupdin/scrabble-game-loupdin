@@ -40,6 +40,8 @@ export default function ScrabbleGame() {
     const isValid = await validateWord(formedWord);
     if (!isValid) {
       alert(`'${formedWord}' is not a valid word!`);
+      setTiles(prevTiles => [...prevTiles, ...placedTiles.map(t => t.tile)]);
+      setPlacedTiles([]);
       return;
     }
 
@@ -126,11 +128,14 @@ export default function ScrabbleGame() {
             position: 'relative'
           }}>
             {tile}
+            <span style={{ position: 'absolute', top: '2px', right: '4px', fontSize: '12px', color: '#555' }}>
+              {letterValues[tile]}
+            </span>
           </div>
         ))}
       </div>
-      <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out', marginRight: '10px' }}>Commit Move</button>
-      <button onClick={skipTurn} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#FF5733', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s ease-in-out' }}>Skip Turn</button>
+      <button onClick={commitMove} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Commit Move</button>
+      <button onClick={skipTurn} style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#FF5733', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Skip Turn</button>
     </div>
   );
 }
