@@ -5,7 +5,9 @@ const letterValues = {
   N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
 };
 
-const dictionary = new Set(["APPLE", "BANANA", "CHERRY", "DOG", "ELEPHANT", "FISH", "GRAPE", "HOUSE", "ICE", "JUMP", "KITE", "LION", "MANGO", "NOTE", "ORANGE", "PENCIL", "QUEEN", "RIVER", "SUN", "TIGER", "UMBRELLA", "VAN", "WATER", "XYLOPHONE", "YELLOW", "ZEBRA"]);
+// Replace this with your actual Merriam-Webster API key
+const API_KEY = "5e5e356d-0af0-4e01-9d2d-f526be53b058";
+const API_URL = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
 
 const getRandomLetter = () => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -21,11 +23,26 @@ export default function ScrabbleGame() {
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
 
-  const commitMove = () => {
+  const validateWord = async (word) => {
+    try {
+      const response = await fetch(`${API_URL}${word}?key=${API_KEY}`);
+      const data = await response.json();
+      
+      // Merriam-Webster returns an array where valid words contain a "meta" object
+      return Array.isArray(data) && data.some(entry => entry.meta);
+    } catch (error) {
+      console.error("Error validating word:", error);
+      return false;
+    }
+  };
+
+  const commitMove = async () => {
     if (placedTiles.length === 0) return;
     
     const formedWord = placedTiles.map(tile => tile.tile).join("");
-    if (!dictionary.has(formedWord)) {
+
+    const isValid = await validateWord(formedWord);
+    if (!isValid) {
       alert(`'${formedWord}' is not a valid word!`);
       return;
     }
@@ -34,7 +51,6 @@ export default function ScrabbleGame() {
     setPlayerScore(prevScore => prevScore + roundScore);
     setPlacedTiles([]);
     
-    // Ensure the player gets new tiles after committing a move
     setTiles(prevTiles => [...prevTiles, ...generateTiles(placedTiles.length)]);
   };
 
@@ -96,7 +112,7 @@ export default function ScrabbleGame() {
           ))
         )}
       </div>
-      
+
       {/* Letter Tiles */}
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         {tiles.length > 0 ? (
