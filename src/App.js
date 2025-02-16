@@ -18,6 +18,16 @@ export default function ScrabbleGame() {
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
 
+  const commitMove = () => {
+    console.log("Move committed!");
+    alert("Move committed!");
+  };
+
+  const skipTurn = () => {
+    console.log("Turn skipped!");
+    alert("Turn skipped!");
+  };
+
   const handleDragStart = (event, tile, index) => {
     event.dataTransfer.setData("text/plain", JSON.stringify({ tile, index }));
   };
@@ -33,24 +43,6 @@ export default function ScrabbleGame() {
     });
 
     setTiles(prevTiles => prevTiles.filter((_, i) => i !== data.index));
-  };
-
-  const handleDragStartRemove = (event, row, col) => {
-    event.dataTransfer.setData("text/plain", JSON.stringify({ row, col }));
-  };
-
-  const handleDropRemove = (event) => {
-    event.preventDefault();
-    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
-    setBoard(prevBoard => {
-      const newBoard = prevBoard.map(rowArr => [...rowArr]);
-      const removedTile = newBoard[data.row][data.col];
-      if (removedTile) {
-        setTiles(prevTiles => [...prevTiles, removedTile.letter]);
-      }
-      newBoard[data.row][data.col] = null;
-      return newBoard;
-    });
   };
 
   return (
@@ -80,8 +72,6 @@ export default function ScrabbleGame() {
               }}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => handleDrop(event, rowIndex, colIndex)}
-              draggable={!!cell}
-              onDragStart={(event) => handleDragStartRemove(event, rowIndex, colIndex)}
             >
               {cell && (
                 <>
@@ -95,7 +85,7 @@ export default function ScrabbleGame() {
           ))
         )}
       </div>
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }} onDragOver={(event) => event.preventDefault()} onDrop={handleDropRemove}>
+      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         {tiles.map((tile, index) => (
           <div key={index} draggable onDragStart={(event) => handleDragStart(event, tile, index)} style={{
             padding: '10px',
@@ -110,8 +100,8 @@ export default function ScrabbleGame() {
           </div>
         ))}
       </div>
-      <button style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
-      <button style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
+      <button onClick={commitMove} style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
+      <button onClick={skipTurn} style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
     </div>
   );
 }
