@@ -1,107 +1,197 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from "react";
+import "./App.css";
 
 const letterValues = {
   A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3,
   N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10
 };
 
-const getRandomLetter = () => {
+const generateRandomTiles = () => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  return letters[Math.floor(Math.random() * letters.length)];
+  return Array.from({ length: 7 }, () => {
+    const letter = letters[Math.floor(Math.random() * letters.length)];
+    return { letter, value: letterValues[letter] };
+  });
 };
 
-const generateTiles = (num = 7) => Array.from({ length: num }, () => getRandomLetter());
-
-const checkWordValidity = async (word) => {
-  const apiKey = "5e5e356d-0af0-4e01-9d2d-f526be53b058";
-  try {
-    const response = await fetch(`https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=${apiKey}`);
-    if (!response.ok) {
-      console.error("Error: Invalid API response");
-      return false;
-    }
-    
-    const data = await response.json();
-    if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== 'object' || !data[0].meta) {
-      console.warn("Invalid word or unexpected API response:", data);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Dictionary API error:", error);
-    return false;
-  }
-};
-
-export default function ScrabbleGame() {
-  const [tiles, setTiles] = useState([]);
-  const [board, setBoard] = useState(Array.from({ length: 15 }, () => Array(15).fill(null)));
+const App = () => {
+  const [board, setBoard] = useState(Array(15).fill(null).map(() => Array(15).fill(null)));
+  const [tiles, setTiles] = useState(generateRandomTiles());
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
 
-  useEffect(() => {
-    setTiles(generateTiles(7));
-  }, []);
+  const handleDragStart = (e, tile, row = null, col = null) => {
+    e.dataTransfer.setData("tile", JSON.stringify({ tile, row, col }));
+  };
+
+  const handleDrop = (e, row, col) => {
+    e.preventDefault();
+    const { tile, prevRow, prevCol } = JSON.parse(e.dataTransfer.getData("tile"));
+
+    // If dragging from the board, clear previous position
+    if (prevRow !== null && prevCol !== null) {
+      const newBoard = board.map((r, rowIndex) =>
+        r.map((c, colIndex) => (rowIndex === prevRow && colIndex === prevCol ? null : c))
+      );
+      setBoard(newBoard);
+    }
+
+    // If dropping onto an empty board space
+    if (board[row][col] === null) {
+      const newBoard = board.map((r, rowIndex) =>
+        r.map((c, colIndex) => (rowIndex === row && colIndex === col ? tile : c))
+      );
+      setBoard(newBoard);
+
+      // Remove tile from hand if it was originally there
+      setTiles((prevTiles) => prevTiles.filter((t) => t.letter !== tile.letter));
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleTileReturn = (e) => {
+    e.preventDefault();
+    const { tile, row, col } = JSON.parse(e.dataTransfer.getData("tile"));
+
+    if (row !== null && col !== null) {
+      setTiles((prevTiles) => [...prevTiles, tile]);
+
+      const newBoard = board.map((r, rowIndex) =>
+        r.map((c, colIndex) => (rowIndex === row && colIndex === col ? null : c))
+      );
+      setBoard(newBoard);
+    }
+  };
 
   const commitMove = async () => {
-    const placedLetters = [];
-    board.forEach(row => row.forEach(cell => { if (cell) placedLetters.push(cell.letter); }));
-    const word = placedLetters.join("");
-    
-    if (!word) {
-      alert("No letters placed on the board!");
-      return;
+    const words = extractWords(board);
+    let totalScore = 0;
+
+    for (const word of words) {
+      const isValid = await isValidWord(word);
+      if (isValid) {
+        totalScore += calculateWordScore(word);
+      }
     }
-    
-    const isValid = await checkWordValidity(word);
-    if (isValid) {
-      setPlayerScore(playerScore + word.split('').reduce((acc, letter) => acc + letterValues[letter], 0));
-      alert("Move committed!");
-      setTiles(generateTiles(7));
-    } else {
-      alert(`'${word}' is not a valid word!`);
-    }
+
+    setPlayerScore((prevScore) => prevScore + totalScore);
+    setTiles(generateRandomTiles());
   };
 
   const skipTurn = () => {
-    setTiles(generateTiles(7));
-    alert("Turn skipped!");
+    setTiles(generateRandomTiles());
+  };
+
+  const extractWords = (board) => {
+    let words = [];
+
+    for (let row = 0; row < 15; row++) {
+      let word = "";
+      for (let col = 0; col < 15; col++) {
+        if (board[row][col]) {
+          word += board[row][col].letter;
+        } else if (word.length > 1) {
+          words.push(word);
+          word = "";
+        } else {
+          word = "";
+        }
+      }
+      if (word.length > 1) words.push(word);
+    }
+
+    for (let col = 0; col < 15; col++) {
+      let word = "";
+      for (let row = 0; row < 15; row++) {
+        if (board[row][col]) {
+          word += board[row][col].letter;
+        } else if (word.length > 1) {
+          words.push(word);
+          word = "";
+        } else {
+          word = "";
+        }
+      }
+      if (word.length > 1) words.push(word);
+    }
+
+    return words;
+  };
+
+  const isValidWord = async (word) => {
+    const response = await fetch(
+      `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=YOUR_API_KEY`
+    );
+    const data = await response.json();
+    return Array.isArray(data) && typeof data[0] === "string" ? false : true;
+  };
+
+  const calculateWordScore = (word) => {
+    return word.split("").reduce((acc, letter) => acc + letterValues[letter], 0);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', backgroundColor: '#f8f8f8', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '600px', marginBottom: '20px' }}>
-        <h2>Player Score: {playerScore}</h2>
-        <h2>Opponent Score: {opponentScore}</h2>
+    <div className="game-container">
+      <h1>Loupdin Scrabble Game</h1>
+      <div className="score-container">
+        <div>Player Score: {playerScore}</div>
+        <div>Opponent Score: {opponentScore}</div>
       </div>
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px' }}>Loupdin Scrabble Game</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 40px)', gap: '2px', backgroundColor: '#c2a87e', padding: '10px', borderRadius: '8px', marginBottom: '20px' }}>
-        {board.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              style={{
-                width: '40px',
-                height: '40px',
-                border: '1px solid #333',
-                backgroundColor: cell ? '#ddd' : '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                position: 'relative'
-              }}
-            >
-              {cell && cell.letter}
-            </div>
-          ))
-        )}
+      <div className="board">
+        {board.map((row, rowIndex) => (
+          <div key={rowIndex} className="board-row">
+            {row.map((cell, colIndex) => (
+              <div
+                key={colIndex}
+                className="board-cell"
+                onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
+                onDragOver={handleDragOver}
+              >
+                {cell ? (
+                  <div
+                    className="tile"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, cell, rowIndex, colIndex)}
+                  >
+                    {cell.letter}
+                    <span className="tile-value">{cell.value}</span>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
-      <button onClick={commitMove} style={{ padding: '10px 20px', marginTop: '20px', backgroundColor: '#4CAF50', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Commit Move</button>
-      <button onClick={skipTurn} style={{ padding: '10px 20px', marginTop: '10px', backgroundColor: '#FF5733', color: 'white', borderRadius: '5px', border: 'none', cursor: 'pointer' }}>Skip Turn</button>
+      <div
+        className="tile-container"
+        onDrop={handleTileReturn}
+        onDragOver={handleDragOver}
+      >
+        {tiles.map((tile, index) => (
+          <div
+            key={index}
+            className="tile"
+            draggable
+            onDragStart={(e) => handleDragStart(e, tile)}
+          >
+            {tile.letter}
+            <span className="tile-value">{tile.value}</span>
+          </div>
+        ))}
+      </div>
+      <div className="buttons">
+        <button className="commit-btn" onClick={commitMove}>
+          Commit Move
+        </button>
+        <button className="skip-btn" onClick={skipTurn}>
+          Skip Turn
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+export default App;
